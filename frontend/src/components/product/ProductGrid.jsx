@@ -24,7 +24,7 @@ const ProductGrid = ({ selectedCategory = "All" }) => {
             try {
                 // Determine API URL based on category
                 // Backend expects param 'category' for filter, 'page' and 'size' for pagination
-                const url = "products";
+                const url = `${API_BASE_URL}/products`;
                 const params = {
                     page: currentPage,
                     size: pageSize,
@@ -34,8 +34,11 @@ const ProductGrid = ({ selectedCategory = "All" }) => {
                 const response = await axios.get(url, { params });
 
                 // Backend returns Page<Product> which maps to { content: [], totalPages: ... }
-                setProducts(response.data?.content || []);
-                setTotalPages(response.data?.totalPages || 0);
+                console.log("[ProductGrid] API response:", response.data);
+                const content = response.data?.content || [];
+                const pages = response.data?.totalPages ?? 1;
+                setProducts(content);
+                setTotalPages(pages);
             } catch (err) {
                 console.error("Failed to fetch products", err);
                 // Fallback demo data if backend fails
@@ -94,7 +97,7 @@ const ProductGrid = ({ selectedCategory = "All" }) => {
                     </div>
 
                     {/* Pagination Controls */}
-                    {totalPages > 1 && (
+                    {products.length > 0 && (
                         <div className="flex justify-center items-center space-x-2 mt-8">
                             <button
                                 onClick={() => handlePageChange(currentPage - 1)}
