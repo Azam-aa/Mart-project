@@ -56,7 +56,7 @@ mart-project/
     npm run dev
     ```
 3.  **Access**:
-    -   Frontend: `http://localhost:5173`
+    -   Frontend: `[http://localhost:5173](https://mart-project-smoky.vercel.app/dashboard)`
     -   Backend API: `http://localhost:8080`
 
 ## 🔑 Default Credentials
