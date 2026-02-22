@@ -1,6 +1,5 @@
 package com.app.dto;
 
-import com.app.model.Role;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -10,9 +9,7 @@ import lombok.NoArgsConstructor;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class AuthResponse {
-    private String token;
-    private String username;
-    private String email;
-    private Role role;
+public class CartDTO {
+    private Long productId;
+    private Integer quantity;
 }

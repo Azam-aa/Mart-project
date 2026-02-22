@@ -1,6 +1,5 @@
 package com.app.dto;
 
-import com.app.model.Role;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -10,9 +9,7 @@ import lombok.NoArgsConstructor;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class AuthResponse {
-    private String token;
-    private String username;
+public class VerifyOtpRequest {
     private String email;
-    private Role role;
+    private String otp;
 }
