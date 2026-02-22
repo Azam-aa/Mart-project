@@ -1,34 +1,33 @@
 import React from "react";
-import WebcamPixelGrid from "../components/ui/WebcamPixelGrid";
+import ProductGrid from "../components/product/ProductGrid";
 
-export default function Home() {
+const Home = () => {
   return (
-    <div className="relative h-screen w-screen bg-black overflow-hidden">
+    <div className="space-y-8">
+      <section className="text-center py-12 px-4 bg-gradient-to-br from-primary-50 to-white dark:from-dark dark:to-gray-900 rounded-3xl shadow-inner border border-primary-100 dark:border-gray-800">
+        <h1 className="text-4xl md:text-6xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-blue-600 mb-4 animate-fade-in-up">
+          Welcome to MartApp
+        </h1>
+        <p className="text-lg text-gray-600 dark:text-gray-300 max-w-2xl mx-auto mb-8">
+          Discover the latest gadgets and electronics at unbeatable prices. Experience premium shopping today.
+        </p>
+        <button className="px-8 py-3 bg-primary-600 hover:bg-primary-700 text-white rounded-full font-bold shadow-lg hover:shadow-primary-500/50 transition-all duration-300 transform hover:-translate-y-1">
+          Shop Now
+        </button>
+      </section>
 
-      <WebcamPixelGrid />
-
-      <div className="absolute inset-0 bg-black/40 z-10" />
-
-      <div className="relative z-20 flex h-full items-center justify-center text-white text-center px-6">
-        <div>
-          <h1 className="text-6xl font-bold">
-            Ship stunning landing pages faster.
-          </h1>
-
-          <p className="mt-6 text-lg text-white/70 max-w-xl mx-auto">
-            Build amazing landing pages with animations.
-          </p>
-
-          <div className="mt-8 flex justify-center gap-4">
-            <button className="px-8 py-3 bg-white text-black rounded-full">
-              Get Started
-            </button>
-            <button className="px-8 py-3 border border-white/30 rounded-full">
-              View Docs
-            </button>
-          </div>
+      <div className="container mx-auto px-4">
+        <div className="flex justify-between items-end mb-6">
+          <h2 className="text-2xl font-bold text-gray-800 dark:text-white border-l-4 border-primary-500 pl-4">
+            Featured Products
+          </h2>
+          {/* Filter Component could go here */}
         </div>
+
+        <ProductGrid />
       </div>
     </div>
   );
-}
+};
+
+export default Home;
