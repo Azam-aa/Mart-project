@@ -1,10 +1,20 @@
 import React, { useState } from "react";
-import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { useCart } from "../context/CartContext";
 import { useAuth } from "../context/AuthContext";
-import { API_BASE_URL, IMAGE_BASE_URL } from "../lib/constants";
+import { IMAGE_BASE_URL } from "../lib/constants";
 import Button from "../components/ui/Button";
+
+const BACKEND = "http://localhost:8080";
+const authPost = (url, body, token) =>
+    fetch(`${BACKEND}${url}`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify(body),
+    });
 import { IconMinus, IconPlus, IconTrash } from "@tabler/icons-react";
 
 const Cart = () => {
@@ -24,18 +34,13 @@ const Cart = () => {
         if (paymentMethod === 'cod') {
             setLoading(true);
             try {
-                // Create Order with COD
-                await axios.post("orders/create", {
-                    paymentId: "COD",
-                    shippingAddress: shippingAddress
-                }, {
-                    headers: { Authorization: `Bearer ${token}` }
-                });
+                const res = await authPost("/api/orders/create", { paymentId: "COD", shippingAddress }, token);
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
                 alert("Order Placed Successfully! Redirecting to orders...");
                 clearCart();
                 navigate('/orders');
             } catch (err) {
-                console.error(err);
+                console.error("COD order failed:", err);
                 alert("Failed to place order. Please try again.");
             } finally {
                 setLoading(false);
@@ -46,56 +51,42 @@ const Cart = () => {
         // Razorpay Flow
         setLoading(true);
         try {
-            const res = await axios.post("payment/create-order", {
-                amount: cartTotal
-            }, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            const orderData = res.data;
+            const res = await authPost("/api/payment/create-order", { amount: cartTotal }, token);
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            const orderData = await res.json();
 
             const options = {
-                "key": "rzp_test_SHzK5nEuxj7TVK",
-                "amount": orderData.amount,
-                "currency": orderData.currency,
-                "name": "MartApp",
-                "description": "Purchase Description",
-                "order_id": orderData.id,
-                "image": "https://via.placeholder.com/200",
-                "handler": function (response) {
+                key: "rzp_test_SHzK5nEuxj7TVK",
+                amount: orderData.amount,
+                currency: orderData.currency,
+                name: "MartApp",
+                description: "Purchase Description",
+                order_id: orderData.id,
+                handler: function (response) {
                     setLoading(true);
-                    axios.post("orders/create", {
+                    authPost("/api/orders/create", {
                         paymentId: response.razorpay_payment_id,
-                        shippingAddress: shippingAddress
-                    }, {
-                        headers: { Authorization: `Bearer ${token}` }
-                    }).then(() => {
-                        alert("Payment Successful! Order Confirmed.");
-                        clearCart();
-                        navigate('/orders');
-                    }).catch(err => {
-                        console.error(err);
-                        alert("Payment successful but order creation failed. Contact support.");
-                    }).finally(() => {
-                        setLoading(false);
-                    });
+                        shippingAddress,
+                    }, token)
+                        .then(r => {
+                            if (!r.ok) throw new Error(`HTTP ${r.status}`);
+                            alert("Payment Successful! Order Confirmed.");
+                            clearCart();
+                            navigate('/orders');
+                        })
+                        .catch(err => {
+                            console.error("Order creation after payment failed:", err);
+                            alert("Payment successful but order creation failed. Contact support.");
+                        })
+                        .finally(() => setLoading(false));
                 },
-                "modal": {
-                    "ondismiss": function () {
-                        setLoading(false);
-                    }
-                },
-                "prefill": {
-                    "name": user?.username,
-                    "email": user?.email,
-                },
-                "theme": {
-                    "color": "#7c3aed"
-                }
+                modal: { ondismiss: () => setLoading(false) },
+                prefill: { name: user?.username, email: user?.email },
+                theme: { color: "#7c3aed" },
             };
-            const rzp1 = new window.Razorpay(options);
-            rzp1.open();
+            new window.Razorpay(options).open();
         } catch (e) {
-            console.error(e);
+            console.error("Razorpay flow failed:", e);
             alert("Checkout failed");
             setLoading(false);
         }

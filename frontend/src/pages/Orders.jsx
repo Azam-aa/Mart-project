@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from "react";
-import axios from "axios";
 import { useAuth } from "../context/AuthContext";
-import { API_BASE_URL, IMAGE_BASE_URL } from "../lib/constants";
+import { IMAGE_BASE_URL } from "../lib/constants";
+
+const BACKEND = "http://localhost:8080";
 import {
     IconPackage,
     IconTruck,
@@ -39,14 +40,13 @@ const Orders = () => {
 
     const fetchOrders = async () => {
         try {
-            const res = await axios.get(`${API_BASE_URL}/orders`, {
+            const token = localStorage.getItem("token");
+            const res = await fetch(`${BACKEND}/api/orders`, {
                 headers: { Authorization: `Bearer ${token}` },
             });
-            setOrders(
-                res.data.sort(
-                    (a, b) => new Date(b.orderDate) - new Date(a.orderDate)
-                )
-            );
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            const data = await res.json();
+            setOrders(data.sort((a, b) => new Date(b.orderDate) - new Date(a.orderDate)));
         } catch (err) {
             console.error("Error fetching orders:", err);
         } finally {

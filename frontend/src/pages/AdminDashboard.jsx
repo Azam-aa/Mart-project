@@ -1,9 +1,12 @@
 import React, { useState, useEffect } from "react";
-import axios from "axios";
-import { API_BASE_URL, IMAGE_BASE_URL } from "../lib/constants";
+import { IMAGE_BASE_URL } from "../lib/constants";
 import Button from "../components/ui/Button";
 import Input from "../components/ui/Input";
 import { IconPlus, IconEdit, IconTrash, IconPackage, IconCurrencyDollar, IconCategory } from "@tabler/icons-react";
+
+const BACKEND = "http://localhost:8080";
+const getToken = () => localStorage.getItem("token");
+const authHeaders = () => ({ Authorization: `Bearer ${getToken()}` });
 
 const AdminDashboard = () => {
     const [products, setProducts] = useState([]);
@@ -29,9 +32,9 @@ const AdminDashboard = () => {
 
     const fetchProducts = async () => {
         try {
-            // Products API is paginated — use .content and a large size to get all for admin view
-            const response = await axios.get(`${API_BASE_URL}/products?size=1000`);
-            const data = response.data;
+            const res = await fetch(`${BACKEND}/api/products?size=1000`, { headers: authHeaders() });
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            const data = await res.json();
             setProducts(Array.isArray(data) ? data : (data.content ?? []));
         } catch (error) {
             console.error("Failed to fetch products", error);
@@ -77,21 +80,27 @@ const AdminDashboard = () => {
 
         try {
             if (isEditing) {
-                await axios.put(`${API_BASE_URL}/products/${currentProductId}`, data, {
-                    headers: { "Content-Type": "multipart/form-data" }
+                const res = await fetch(`${BACKEND}/api/products/${currentProductId}`, {
+                    method: "PUT",
+                    headers: authHeaders(),
+                    body: data,
                 });
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
                 alert("Product updated successfully!");
             } else {
-                await axios.post(`${API_BASE_URL}/products`, data, {
-                    headers: { "Content-Type": "multipart/form-data" }
+                const res = await fetch(`${BACKEND}/api/products`, {
+                    method: "POST",
+                    headers: authHeaders(),
+                    body: data,
                 });
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
                 alert("Product added successfully!");
             }
             fetchProducts();
             resetForm();
         } catch (error) {
             console.error("Operation failed", error);
-            alert("Error: " + (error.response?.data?.message || "Something went wrong"));
+            alert("Error: Something went wrong. Check console.");
         }
     };
 
@@ -112,7 +121,11 @@ const AdminDashboard = () => {
     const handleDelete = async (id) => {
         if (window.confirm("Are you sure you want to delete this product?")) {
             try {
-                await axios.delete(`${API_BASE_URL}/products/${id}`);
+                const res = await fetch(`${BACKEND}/api/products/${id}`, {
+                    method: "DELETE",
+                    headers: authHeaders(),
+                });
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
                 fetchProducts();
                 alert("Product deleted!");
             } catch (error) {

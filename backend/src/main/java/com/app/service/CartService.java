@@ -39,6 +39,11 @@ public class CartService {
     public Cart addToCart(User user, Long productId, Integer quantity) {
         Cart cart = getCart(user);
 
+        // Ensure cart is persisted if it's new
+        if (cart.getId() == null) {
+            cart = cartRepository.save(cart);
+        }
+
         // Ensure items list is not null (redundant with @Builder.Default but safe)
         if (cart.getItems() == null) {
             cart.setItems(new ArrayList<>());

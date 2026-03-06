@@ -1,9 +1,6 @@
-import { createContext, useContext, useState, useEffect } from "react";
+import { createContext, useContext, useState, useEffect, useRef } from "react";
 import axios from "axios";
-import { API_BASE_URL } from "../lib/constants";
-
-// Set baseURL immediately on module load with trailing slash for correct relative joins
-axios.defaults.baseURL = API_BASE_URL + "/";
+axios.defaults.baseURL = "http://localhost:8080/api";
 
 const AuthContext = createContext();
 
@@ -11,6 +8,7 @@ export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
     const [token, setToken] = useState(localStorage.getItem("token"));
     const [loading, setLoading] = useState(true);
+    const logoutRef = useRef(null);
 
     useEffect(() => {
         if (token) {
@@ -25,9 +23,24 @@ export const AuthProvider = ({ children }) => {
         setLoading(false);
     }, [token]);
 
+    useEffect(() => {
+        const interceptor = axios.interceptors.response.use(
+            (response) => response,
+            (error) => {
+                if (error.response && (error.response.status === 401)) {
+                    if (logoutRef.current) {
+                        logoutRef.current();
+                    }
+                }
+                return Promise.reject(error);
+            }
+        );
+        return () => axios.interceptors.response.eject(interceptor);
+    }, []);
+
     const login = async (email, password) => {
         try {
-            const response = await axios.post("auth/login", { email, password });
+            const response = await axios.post("/auth/login", { email, password });
 
             if (response.data.token) {
                 const userData = { ...response.data, email: email };
@@ -47,7 +60,7 @@ export const AuthProvider = ({ children }) => {
 
     const signup = async (username, email, password) => {
         try {
-            const response = await axios.post("auth/signup", { username, email, password });
+            const response = await axios.post("/auth/signup", { username, email, password });
             return response.data;
         } catch (error) {
             console.error("Signup failed", error);
@@ -57,11 +70,12 @@ export const AuthProvider = ({ children }) => {
 
     const verifyOtp = async (email, otp) => {
         try {
-            const response = await axios.post("auth/verify-otp", { email, otp });
+            const response = await axios.post("/auth/verify-otp", { email, otp });
+            const userData = { ...response.data, email: email };
             setToken(response.data.token);
-            setUser(response.data);
+            setUser(userData);
             localStorage.setItem("token", response.data.token);
-            localStorage.setItem("user", JSON.stringify(response.data));
+            localStorage.setItem("user", JSON.stringify(userData));
             return true;
         } catch (error) {
             console.error("OTP Verification failed", error);
@@ -71,7 +85,7 @@ export const AuthProvider = ({ children }) => {
 
     const forgotPassword = async (email) => {
         try {
-            const response = await axios.post("auth/forgot-password", { email });
+            const response = await axios.post("/auth/forgot-password", { email });
             return response.data;
         } catch (error) {
             console.error("Forgot password failed", error);
@@ -81,7 +95,7 @@ export const AuthProvider = ({ children }) => {
 
     const resetPassword = async (email, otp, newPassword) => {
         try {
-            const response = await axios.post("auth/reset-password", { email, otp, newPassword });
+            const response = await axios.post("/auth/reset-password", { email, otp, newPassword });
             return response.data;
         } catch (error) {
             console.error("Reset password failed", error);
@@ -94,9 +108,14 @@ export const AuthProvider = ({ children }) => {
         setToken(null);
         localStorage.removeItem("token");
         localStorage.removeItem("user");
+        localStorage.removeItem("cart");
         delete axios.defaults.headers.common["Authorization"];
         window.location.href = "/login";
     };
+
+    useEffect(() => {
+        logoutRef.current = logout;
+    });
 
     return (
         <AuthContext.Provider value={{ user, token, login, signup, verifyOtp, logout, loading, forgotPassword, resetPassword }}>

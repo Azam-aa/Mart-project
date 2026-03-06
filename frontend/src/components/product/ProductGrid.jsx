@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from "react";
-import axios from "axios";
-import { API_BASE_URL } from "../../lib/constants";
 import ProductCard from "./ProductCard";
 import { useCart } from "../../context/CartContext";
+
+const BACKEND = "http://localhost:8080";
 
 const ProductGrid = ({ selectedCategory = "All" }) => {
     const { addToCart } = useCart();
@@ -10,46 +10,53 @@ const ProductGrid = ({ selectedCategory = "All" }) => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [currentPage, setCurrentPage] = useState(0);
-    const [totalPages, setTotalPages] = useState(0);
+    const [totalPages, setTotalPages] = useState(1);
+    const [totalElements, setTotalElements] = useState(0);
     const pageSize = 12;
 
+    // Reset to page 0 when category changes
     useEffect(() => {
-        // Reset to page 0 when category changes
         setCurrentPage(0);
     }, [selectedCategory]);
 
     useEffect(() => {
         const fetchProducts = async () => {
             setLoading(true);
+            setError(null);
             try {
-                // Determine API URL based on category
-                // Backend expects param 'category' for filter, 'page' and 'size' for pagination
-                const url = `${API_BASE_URL}/products`;
-                const params = {
-                    page: currentPage,
-                    size: pageSize,
-                    category: selectedCategory !== "All" ? selectedCategory : undefined
-                };
+                const token = localStorage.getItem("token");
+                const params = new URLSearchParams({ page: currentPage, size: pageSize });
+                if (selectedCategory !== "All") params.append("category", selectedCategory);
 
-                const response = await axios.get(url, { params });
+                const url = `${BACKEND}/api/products?${params.toString()}`;
+                console.log("[ProductGrid] Fetching:", url);
 
-                // Backend returns Page<Product> which maps to { content: [], totalPages: ... }
-                console.log("[ProductGrid] API response:", response.data);
-                const content = response.data?.content || [];
-                const pages = response.data?.totalPages ?? 1;
-                setProducts(content);
-                setTotalPages(pages);
+                const response = await fetch(url, {
+                    headers: {
+                        "Content-Type": "application/json",
+                        ...(token && { Authorization: `Bearer ${token}` }),
+                    },
+                });
+
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+                const data = await response.json();
+                console.log("[ProductGrid] Response:", data);
+                
+                const parsedTotalPages = data.page?.totalPages ?? data.totalPages ?? 1;
+                const parsedTotalElements = data.page?.totalElements ?? data.totalElements ?? 0;
+                
+                console.log("[ProductGrid] totalPages:", parsedTotalPages, "| totalElements:", parsedTotalElements);
+
+                setProducts(data.content || []);
+                setTotalPages(parsedTotalPages);
+                setTotalElements(parsedTotalElements);
             } catch (err) {
-                console.error("Failed to fetch products", err);
-                // Fallback demo data if backend fails
-                setProducts([
-                    { id: 1, title: "iPhone 15 Pro", description: "Apple's latest flagship with A17 Pro chip.", price: 129000.00, category: "Mobiles", imageUrl: null },
-                    { id: 2, title: "Samsung Galaxy S24", description: "AI-powered smartphone for the future.", price: 79000.00, category: "Mobiles", imageUrl: null },
-                    { id: 3, title: "Sony WH-1000XM5", description: "Noise cancelling headphones.", price: 29000.00, category: "Audio", imageUrl: null },
-                    { id: 4, title: "MacBook Air M3", description: "Supercharged by M3 chip.", price: 114000.00, category: "Laptops", imageUrl: null },
-                ]);
+                console.error("[ProductGrid] Fetch failed:", err.message);
+                setError(`Could not load products: ${err.message}`);
+                setProducts([]);
                 setTotalPages(1);
-                setError("Using demo data (Backend might be offline or error)");
+                setTotalElements(0);
             } finally {
                 setLoading(false);
             }
@@ -58,87 +65,97 @@ const ProductGrid = ({ selectedCategory = "All" }) => {
         fetchProducts();
     }, [selectedCategory, currentPage]);
 
-    const handleAddToCart = (product) => {
-        addToCart(product);
-    };
-
-    const handlePageChange = (newPage) => {
+    const goToPage = (newPage) => {
         if (newPage >= 0 && newPage < totalPages) {
             setCurrentPage(newPage);
-            window.scrollTo({ top: 0, behavior: 'smooth' });
+            window.scrollTo({ top: 0, behavior: "smooth" });
         }
     };
 
     if (loading) return (
         <div className="flex justify-center items-center h-64">
-            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary-600"></div>
+            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-violet-600" />
+        </div>
+    );
+
+    if (error) return (
+        <div className="text-center py-16">
+            <p className="text-red-500 font-semibold">{error}</p>
+            <p className="text-gray-400 text-sm mt-2">Make sure the backend is running on port 8080.</p>
+        </div>
+    );
+
+    if (products.length === 0) return (
+        <div className="text-center py-20 text-gray-500 font-medium">
+            No products found in this category.
         </div>
     );
 
     return (
         <div>
-            {error && (
-                <div className="bg-yellow-100 dark:bg-yellow-900 border-l-4 border-yellow-500 text-yellow-700 dark:text-yellow-200 p-4 mb-6 rounded shadow-sm" role="alert">
-                    <p className="font-bold">Notice</p>
-                    <p>{error}</p>
-                </div>
-            )}
+            {/* Product Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-8">
+                {products.map((product) => (
+                    <ProductCard key={product.id} product={product} onAddToCart={() => addToCart(product)} />
+                ))}
+            </div>
 
-            {products.length === 0 ? (
-                <div className="text-center py-20 text-gray-500 font-medium">
-                    No products found in this category.
-                </div>
-            ) : (
-                <>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-8">
-                        {products.map((product) => (
-                            <ProductCard key={product.id} product={product} onAddToCart={handleAddToCart} />
-                        ))}
-                    </div>
+            {/* Pagination */}
+            <div className="flex flex-col items-center gap-4 mt-8 pb-6">
 
-                    {/* Pagination Controls */}
-                    {products.length > 0 && (
-                        <div className="flex justify-center items-center space-x-2 mt-8">
-                            <button
-                                onClick={() => handlePageChange(currentPage - 1)}
-                                disabled={currentPage === 0}
-                                className={`px-4 py-2 rounded-lg font-medium transition-colors ${currentPage === 0
-                                    ? "bg-gray-100 text-gray-400 cursor-not-allowed dark:bg-gray-800 dark:text-gray-600"
-                                    : "bg-white text-gray-700 hover:bg-gray-50 border border-gray-200 dark:bg-gray-800 dark:text-gray-200 dark:border-gray-700 dark:hover:bg-gray-700"
-                                    }`}
-                            >
-                                Previous
-                            </button>
-
-                            <div className="flex items-center space-x-1">
-                                {[...Array(totalPages)].map((_, index) => (
-                                    <button
-                                        key={index}
-                                        onClick={() => handlePageChange(index)}
-                                        className={`w-10 h-10 rounded-lg font-medium transition-colors ${currentPage === index
-                                            ? "bg-violet-600 text-white"
-                                            : "bg-white text-gray-700 hover:bg-gray-50 border border-gray-200 dark:bg-gray-800 dark:text-gray-200 dark:border-gray-700 dark:hover:bg-gray-700"
-                                            }`}
-                                    >
-                                        {index + 1}
-                                    </button>
-                                ))}
-                            </div>
-
-                            <button
-                                onClick={() => handlePageChange(currentPage + 1)}
-                                disabled={currentPage === totalPages - 1}
-                                className={`px-4 py-2 rounded-lg font-medium transition-colors ${currentPage === totalPages - 1
-                                    ? "bg-gray-100 text-gray-400 cursor-not-allowed dark:bg-gray-800 dark:text-gray-600"
-                                    : "bg-white text-gray-700 hover:bg-gray-50 border border-gray-200 dark:bg-gray-800 dark:text-gray-200 dark:border-gray-700 dark:hover:bg-gray-700"
-                                    }`}
-                            >
-                                Next
-                            </button>
-                        </div>
+                {/* Info */}
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                    Page{" "}
+                    <span className="font-bold text-gray-800 dark:text-white">{currentPage + 1}</span>
+                    {" "}of{" "}
+                    <span className="font-bold text-gray-800 dark:text-white">{totalPages}</span>
+                    {totalElements > 0 && (
+                        <span className="ml-2 text-violet-500 font-semibold">· {totalElements} products</span>
                     )}
-                </>
-            )}
+                </p>
+
+                {/* Buttons */}
+                <div className="flex items-center gap-2">
+
+                    {/* Previous */}
+                    <button
+                        onClick={() => goToPage(currentPage - 1)}
+                        disabled={currentPage === 0}
+                        className={`px-5 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 ${currentPage === 0
+                                ? "bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-600 cursor-not-allowed"
+                                : "bg-white dark:bg-gray-800 text-violet-700 dark:text-violet-400 border border-violet-200 dark:border-gray-600 hover:bg-violet-50 hover:border-violet-400 shadow-sm"
+                            }`}
+                    >
+                        ← Prev
+                    </button>
+
+                    {/* Page Numbers */}
+                    {[...Array(totalPages)].map((_, idx) => (
+                        <button
+                            key={idx}
+                            onClick={() => goToPage(idx)}
+                            className={`w-10 h-10 rounded-xl text-sm font-bold transition-all duration-200 ${currentPage === idx
+                                    ? "bg-violet-600 text-white shadow-lg shadow-violet-200 dark:shadow-violet-900 scale-110"
+                                    : "bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-600 hover:bg-violet-50 hover:border-violet-300 hover:text-violet-700"
+                                }`}
+                        >
+                            {idx + 1}
+                        </button>
+                    ))}
+
+                    {/* Next */}
+                    <button
+                        onClick={() => goToPage(currentPage + 1)}
+                        disabled={currentPage >= totalPages - 1}
+                        className={`px-5 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 ${currentPage >= totalPages - 1
+                                ? "bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-600 cursor-not-allowed"
+                                : "bg-violet-600 text-white hover:bg-violet-700 shadow-md shadow-violet-200 dark:shadow-violet-900"
+                            }`}
+                    >
+                        Next →
+                    </button>
+                </div>
+            </div>
         </div>
     );
 };
