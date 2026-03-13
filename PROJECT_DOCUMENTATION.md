@@ -53,34 +53,34 @@
 
 ```text
 /e:/mart-project
-â”œâ”€â”€ backend/
-â”‚   â”œâ”€â”€ src/main/java/com/app/
-â”‚   â”‚   â”œâ”€â”€ config/         # System bootstrap (DataInitializer) and WebMvc routing config.
-â”‚   â”‚   â”œâ”€â”€ controller/     # REST endpoints for Auth, Cart, Products, Orders, Payments.
-â”‚   â”‚   â”œâ”€â”€ dto/            # Data Transfer Objects wrapping request/response payloads.
-â”‚   â”‚   â”œâ”€â”€ exception/      # Global Exception Handler acting as a RestControllerAdvice.
-â”‚   â”‚   â”œâ”€â”€ model/          # JPA database entities (User, Product, Cart, Order, etc.).
-â”‚   â”‚   â”œâ”€â”€ repository/     # Spring Data JPA interface integrations wrapping the DB.
-â”‚   â”‚   â”œâ”€â”€ security/       # JWT Filters, UserDetails implementation, and Security Config.
-â”‚   â”‚   â”œâ”€â”€ service/        # Business logic operations (Business layer).
-â”‚   â”‚   â””â”€â”€ BackendApplication.java # Spring Boot main execution class.
-â”‚   â”œâ”€â”€ src/main/resources/ 
-â”‚   â”‚   â””â”€â”€ application*.properties # Configurations for dev, prod, and defaults.
-â”‚   â””â”€â”€ pom.xml             # Backend dependencies and build plugins configurations.
-â”œâ”€â”€ frontend/
-â”‚   â”œâ”€â”€ public/             # Static public assets.
-â”‚   â”œâ”€â”€ src/
-â”‚   â”‚   â”œâ”€â”€ assets/         # Static images / design assets.
-â”‚   â”‚   â”œâ”€â”€ components/     # Reusable UI components (Buttons, Inputs, Cards, Layouts).
-â”‚   â”‚   â”œâ”€â”€ context/        # React context providers representing global state.
-â”‚   â”‚   â”œâ”€â”€ lib/            # Constant definitions and functional utilities.
-â”‚   â”‚   â”œâ”€â”€ pages/          # Web page views mapped to routers.
-â”‚   â”‚   â”œâ”€â”€ App.jsx         # App router wrapper providing Context layers.
-â”‚   â”‚   â”œâ”€â”€ index.css       # Tailwind CSS base and theme injections.
-â”‚   â”‚   â””â”€â”€ main.jsx        # Frontend Entry React DOM logic.
-â”‚   â”œâ”€â”€ package.json        # Frontend dependency list and NPM scripts.
-â”‚   â””â”€â”€ vite.config.js      # Vite build configurations.
-â””â”€â”€ README.md / USER_GUIDE.md # Root documents for user manual testing and system overview.
+|-- backend/
+|   |-- src/main/java/com/app/
+|   |   |-- config/         # System bootstrap (DataInitializer) and WebMvc routing config.
+|   |   |-- controller/     # REST endpoints for Auth, Cart, Products, Orders, Payments.
+|   |   |-- dto/            # Data Transfer Objects wrapping request/response payloads.
+|   |   |-- exception/      # Global Exception Handler acting as a RestControllerAdvice.
+|   |   |-- model/          # JPA database entities (User, Product, Cart, Order, etc.).
+|   |   |-- repository/     # Spring Data JPA interface integrations wrapping the DB.
+|   |   |-- security/       # JWT Filters, UserDetails implementation, and Security Config.
+|   |   |-- service/        # Business logic operations (Business layer).
+|   |   \-- BackendApplication.java # Spring Boot main execution class.
+|   |-- src/main/resources/ 
+|   |   \-- application*.properties # Configurations for dev, prod, and defaults.
+|   \-- pom.xml             # Backend dependencies and build plugins configurations.
+|-- frontend/
+|   |-- public/             # Static public assets.
+|   |-- src/
+|   |   |-- assets/         # Static images / design assets.
+|   |   |-- components/     # Reusable UI components (Buttons, Inputs, Cards, Layouts).
+|   |   |-- context/        # React context providers representing global state.
+|   |   |-- lib/            # Constant definitions and functional utilities.
+|   |   |-- pages/          # Web page views mapped to routers.
+|   |   |-- App.jsx         # App router wrapper providing Context layers.
+|   |   |-- index.css       # Tailwind CSS base and theme injections.
+|   |   \-- main.jsx        # Frontend Entry React DOM logic.
+|   |-- package.json        # Frontend dependency list and NPM scripts.
+|   \-- vite.config.js      # Vite build configurations.
+\-- README.md / USER_GUIDE.md # Root documents for user manual testing and system overview.
 ```
 
 ---
